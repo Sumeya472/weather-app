@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" href="./assets/images/favicon-32x32.png" />
+    <title>Frontend Mentor | Weather app</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700&family=DM+Sans:wght@300;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              n: {
+                900: "hsl(243,96%,9%)",
+                800: "hsl(243,27%,20%)",
+                700: "hsl(243,23%,24%)",
+                600: "hsl(243,23%,30%)",
+                300: "hsl(240,6%,70%)",
+              },
+              b: { 500: "hsl(233,67%,56%)", 700: "hsl(248,70%,36%)" },
+              o: { 500: "hsl(28,100%,52%)" },
+            },
+            fontFamily: {
+              sans: ["DM Sans", "sans-serif"],
+              display: ["Bricolage Grotesque", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      .weather {
+        background: linear-gradient(
+          135deg,
+          hsl(233, 67%, 56%),
+          hsl(248, 70%, 36%)
+        );
+      }
+
+      .scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .scroll::-webkit-scrollbar-thumb {
+        background: hsl(243, 23%, 30%);
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen bg-n-900 font-sans text-white">
+    <main class="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+      <header class="flex items-center justify-between">
+        <a class="flex items-center gap-2 font-bold">
+          <span class="text-2xl text-o-500">☀</span>
+          Weather Now
+        </a>
+
+        <div class="relative">
+          <button
+            id="unitsBtn"
+            class="rounded-lg bg-n-800 px-3 py-2 text-sm hover:bg-n-700"
+          >
+            ⚙ Units⌄
+          </button>
+
+          <div
+            id="units"
+            class="absolute right-0 top-12 z-50 hidden w-64 rounded-xl bg-n-800 p-3 shadow-2xl"
+          >
+            <p class="mb-2 text-xs text-n-300">Switch to Imperial</p>
+
+            <div class="border-b border-n-700 pb-2">
+              <p class="text-xs text-n-300">Temperature</p>
+
+              <button
+                data-temp="celsius"
+                class="u flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                Celsius (°C)<b>✓</b>
+              </button>
+
+              <button
+                data-temp="fahrenheit"
+                class="u flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                Fahrenheit (°F)<b class="hidden">✓</b>
+              </button>
+            </div>
+
+            <div class="border-b border-n-700 py-2">
+              <p class="text-xs text-n-300">Wind Speed</p>
+
+              <button
+                data-wind="kmh"
+                class="w flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                km/h<b>✓</b>
+              </button>
+
+              <button
+                data-wind="mph"
+                class="w flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                mph<b class="hidden">✓</b>
+              </button>
+            </div>
+
+            <div class="pt-2">
+              <p class="text-xs text-n-300">Precipitation</p>
+
+              <button
+                data-precip="mm"
+                class="p flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                Millimeters (mm)<b>✓</b>
+              </button>
+
+              <button
+                data-precip="inch"
+                class="p flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
+              >
+                Inches (in)<b class="hidden">✓</b>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="mx-auto mt-12 max-w-4xl text-center sm:mt-16">
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl">
+          How's the sky looking today?
+        </h1>
+
+        <form
+          id="form"
+          class="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
+        >
+          <div class="relative flex-1">
+            <input
+              id="search"
+              autocomplete="off"
+              placeholder="🔍  Search for a place..."
+              class="h-14 w-full rounded-xl bg-n-800 px-4 outline-none focus:ring-2 focus:ring-b-500"
+            />
+
+            <div
+              id="results"
+              class="absolute top-16 z-40 hidden w-full overflow-hidden rounded-xl bg-n-800 text-left shadow-xl"
+            ></div>
+          </div>
+
+          <button
+            class="h-14 rounded-xl bg-b-500 px-7 font-semibold hover:opacity-80"
+          >
+            Search
+          </button>
+        </form>
+      </section>
+
+      <div id="loading" class="mx-auto mt-10 hidden max-w-6xl animate-pulse">
+        <div class="h-56 rounded-2xl bg-n-800"></div>
+      </div>
+
+      <div
+        id="error"
+        class="mx-auto mt-10 hidden max-w-xl rounded-2xl bg-n-800 p-8 text-center"
+      >
+        <div class="text-4xl">😕</div>
+
+        <h2 class="mt-3 text-2xl font-bold">Something went wrong</h2>
+
+        <p id="errorText" class="mt-2 text-n-300"></p>
+
+        <button
+          id="retry"
+          class="mt-5 rounded-lg bg-b-500 px-6 py-3 font-semibold"
+        >
+          Try again
+        </button>
+      </div>
+
+      <section id="app" class="mx-auto mt-10 hidden max-w-6xl">
+        <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div>
+            <article
+              class="weather flex min-h-[230px] items-center justify-between overflow-hidden rounded-2xl p-6 sm:p-8"
+            >
+              <div>
+                <h2 id="place" class="text-2xl font-bold sm:text-3xl"></h2>
+
+                <p id="date" class="text-sm text-n-300"></p>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <img
+                  id="icon"
+                  class="h-16 w-16 object-contain sm:h-24 sm:w-24"
+                />
+
+                <span
+                  id="temp"
+                  class="font-display text-6xl sm:text-8xl"
+                ></span>
+              </div>
+            </article>
+
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div class="rounded-xl bg-n-800 p-4">
+                <p class="text-sm text-n-300">Feels Like</p>
+                <b id="feels" class="mt-2 block text-xl"></b>
+              </div>
+
+              <div class="rounded-xl bg-n-800 p-4">
+                <p class="text-sm text-n-300">Humidity</p>
+                <b id="humidity" class="mt-2 block text-xl"></b>
+              </div>
+
+              <div class="rounded-xl bg-n-800 p-4">
+                <p class="text-sm text-n-300">Wind</p>
+                <b id="wind" class="mt-2 block text-xl"></b>
+              </div>
+
+              <div class="rounded-xl bg-n-800 p-4">
+                <p class="text-sm text-n-300">Precipitation</p>
+                <b id="precip" class="mt-2 block text-xl"></b>
+              </div>
+            </div>
+
+            <h2 class="mb-3 mt-6 text-sm font-semibold">Daily forecast</h2>
+
+            <div
+              id="daily"
+              class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7"
+            ></div>
+          </div>
+
+          <aside class="rounded-2xl bg-n-800 p-4 sm:p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-semibold">Hourly forecast</h2>
+
+              <div class="relative">
+                <button
+                  id="dayBtn"
+                  class="rounded-lg bg-n-700 px-3 py-2 text-xs"
+                >
+                  Today⌄
+                </button>
+
+                <div
+                  id="days"
+                  class="absolute right-0 top-10 z-30 hidden w-40 rounded-xl bg-n-800 p-2 shadow-xl"
+                ></div>
+              </div>
+            </div>
+
+            <div
+              id="hourly"
+              class="scroll max-h-[540px] space-y-2 overflow-y-auto"
+            ></div>
+          </aside>
+        </div>
+      </section>
+
+      <footer class="mt-10 pb-4 text-center text-xs text-n-300">
+        Challenge by
+        <a
+          class="text-b-500"
+          href="https://www.frontendmentor.io?ref=challenge"
+        >
+          Frontend Mentor </a
+        >. Coded by <a class="text-b-500" href="#">Sumeya</a>.
+      </footer>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
