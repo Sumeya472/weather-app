@@ -4,22 +4,32 @@ const GEO = "https://geocoding-api.open-meteo.com/v1/search";
 const searchForm = document.getElementById("form");
 const searchInput = document.getElementById("search");
 const results = document.getElementById("results");
+
 const app = document.getElementById("app");
 const daily = document.getElementById("daily");
 const hourly = document.getElementById("hourly");
+
 const days = document.getElementById("days");
 const dayBtn = document.getElementById("dayBtn");
+
 const units = document.getElementById("units");
 const unitsBtn = document.getElementById("unitsBtn");
+
 const loading = document.getElementById("loading");
 const error = document.getElementById("error");
 const errorText = document.getElementById("errorText");
 const retry = document.getElementById("retry");
 
+const imperialBtn = document.getElementById("imperialBtn");
+
 let weatherData;
 let locationData;
 let lastSearch = "";
 let selectedDay = 0;
+
+units.dataset.temp = "celsius";
+units.dataset.wind = "kmh";
+units.dataset.precip = "mm";
 
 const weatherIcons = {
   0: "sunny",
@@ -50,6 +60,7 @@ const weatherIcons = {
 
 function icon(code) {
   const name = weatherIcons[code] || "sunny";
+
   return `./assets/images/icon-${name}.webp`;
 }
 
@@ -87,17 +98,29 @@ function showError(message) {
   loading.classList.add("hidden");
   app.classList.add("hidden");
   error.classList.remove("hidden");
+
   errorText.textContent = message;
 }
 
 async function findLocation(city) {
-  const url = `${GEO}?name=${encodeURIComponent(city)}&count=5&language=en&format=json`;
+  const url =
+    `${GEO}?name=${encodeURIComponent(city)}` +
+    `&count=10` +
+    `&language=en` +
+    `&format=json`;
 
   const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Could not search for this location.");
+  }
+
   const data = await response.json();
 
   if (!data.results?.length) {
-    throw new Error("Location not found. Try another city.");
+    throw new Error(
+      "We couldn't connect to the server(API error). please try again in a few minutes.",
+    );
   }
 
   return data.results[0];
@@ -109,9 +132,12 @@ async function getWeather(location) {
     longitude: location.longitude,
     timezone: "auto",
     forecast_days: 7,
+
     current:
       "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+
     hourly: "temperature_2m,weather_code",
+
     daily: "weather_code,temperature_2m_max,temperature_2m_min",
   });
 
@@ -127,13 +153,23 @@ async function getWeather(location) {
 async function searchWeather(city) {
   if (!city.trim()) return;
 
-  lastSearch = city;
-  localStorage.setItem("lastLocation", city);
+  lastSearch = city.trim();
+
+  localStorage.setItem("lastLocation", lastSearch);
+
+  searchInput.value = "";
+
+  results.classList.add("hidden");
+
   showLoading();
 
   try {
     locationData = await findLocation(city);
+
     weatherData = await getWeather(locationData);
+
+    selectedDay = 0;
+
     renderWeather();
   } catch (err) {
     showError(err.message);
@@ -195,10 +231,18 @@ function renderDaily() {
 
     card.innerHTML = `
       <p>${day}</p>
-      <img src="${icon(weatherData.daily.weather_code[index])}"
-        class="mx-auto my-4 h-10 w-10" alt="Weather">
+
+      <img
+        src="${icon(weatherData.daily.weather_code[index])}"
+        class="mx-auto my-4 h-10 w-10"
+        alt="Weather"
+      >
+
       <div class="flex justify-between">
-        <span>${temp(weatherData.daily.temperature_2m_max[index])}</span>
+        <span>
+          ${temp(weatherData.daily.temperature_2m_max[index])}
+        </span>
+
         <span class="text-n-300">
           ${temp(weatherData.daily.temperature_2m_min[index])}
         </span>
@@ -226,8 +270,11 @@ function renderDays() {
 
     button.onclick = () => {
       selectedDay = index;
+
       dayBtn.textContent = name;
+
       days.classList.add("hidden");
+
       renderHourly(index);
     };
 
@@ -236,7 +283,9 @@ function renderDays() {
 
   const today = new Date(
     `${weatherData.daily.time[0]}T12:00:00`,
-  ).toLocaleDateString("en-US", { weekday: "long" });
+  ).toLocaleDateString("en-US", {
+    weekday: "long",
+  });
 
   dayBtn.textContent = today;
 }
@@ -245,6 +294,7 @@ function renderHourly(dayIndex) {
   hourly.innerHTML = "";
 
   const date = weatherData.daily.time[dayIndex];
+
   const data = weatherData.hourly;
 
   data.time.forEach((time, index) => {
@@ -262,12 +312,20 @@ function renderHourly(dayIndex) {
 
     item.innerHTML = `
       <div class="flex items-center gap-3">
-        <img src="${icon(data.weather_code[index])}"
-          class="h-8 w-8" alt="Weather">
+
+        <img
+          src="${icon(data.weather_code[index])}"
+          class="h-8 w-8"
+          alt="Weather"
+        >
+
         <span>${hour}</span>
+
       </div>
 
-      <span>${temp(data.temperature_2m[index])}</span>
+      <span>
+        ${temp(data.temperature_2m[index])}
+      </span>
     `;
 
     hourly.append(item);
@@ -281,9 +339,18 @@ async function suggestions(value) {
   }
 
   try {
-    const url = `${GEO}?name=${encodeURIComponent(value)}&count=5&language=en&format=json`;
+    const url =
+      `${GEO}?name=${encodeURIComponent(value)}` +
+      `&count=10` +
+      `&language=en` +
+      `&format=json`;
 
     const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error("Search failed");
+    }
+
     const data = await response.json();
 
     results.innerHTML = "";
@@ -293,12 +360,32 @@ async function suggestions(value) {
 
       button.className = "block w-full px-4 py-3 text-left hover:bg-n-700";
 
-      button.textContent = `${location.name}, ${location.country}`;
+      const region = location.admin1 ? `, ${location.admin1}` : "";
 
-      button.onclick = () => {
-        searchInput.value = location.name;
+      button.textContent = `${location.name}${region}, ${location.country}`;
+
+      button.onclick = async () => {
         results.classList.add("hidden");
-        searchWeather(location.name);
+
+        searchInput.value = "";
+
+        lastSearch = location.name;
+
+        localStorage.setItem("lastLocation", location.name);
+
+        showLoading();
+
+        try {
+          locationData = location;
+
+          weatherData = await getWeather(locationData);
+
+          selectedDay = 0;
+
+          renderWeather();
+        } catch (err) {
+          showError(err.message);
+        }
       };
 
       results.append(button);
@@ -312,15 +399,23 @@ async function suggestions(value) {
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
+
+  const city = searchInput.value.trim();
+
+  if (!city) return;
+
   results.classList.add("hidden");
-  searchWeather(searchInput.value);
+
+  searchWeather(city);
 });
 
 searchInput.addEventListener("input", () => {
   clearTimeout(window.searchTimer);
 
+  const value = searchInput.value.trim();
+
   window.searchTimer = setTimeout(() => {
-    suggestions(searchInput.value.trim());
+    suggestions(value);
   }, 300);
 });
 
@@ -332,17 +427,65 @@ unitsBtn.addEventListener("click", () => {
   units.classList.toggle("hidden");
 });
 
+if (imperialBtn) {
+  imperialBtn.addEventListener("click", () => {
+    units.dataset.temp = "fahrenheit";
+    units.dataset.wind = "mph";
+    units.dataset.precip = "inch";
+
+    document.querySelectorAll("[data-temp] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
+
+    document.querySelectorAll("[data-wind] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
+
+    document.querySelectorAll("[data-precip] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
+
+    const fahrenheitCheck = document.querySelector(
+      '[data-temp="fahrenheit"] b',
+    );
+
+    if (fahrenheitCheck) {
+      fahrenheitCheck.classList.remove("hidden");
+    }
+
+    const mphCheck = document.querySelector('[data-wind="mph"] b');
+
+    if (mphCheck) {
+      mphCheck.classList.remove("hidden");
+    }
+
+    const inchCheck = document.querySelector('[data-precip="inch"] b');
+
+    if (inchCheck) {
+      inchCheck.classList.remove("hidden");
+    }
+
+    units.classList.add("hidden");
+
+    if (weatherData) {
+      renderWeather();
+    }
+  });
+}
+
 document.querySelectorAll("[data-temp]").forEach((button) => {
   button.onclick = () => {
     units.dataset.temp = button.dataset.temp;
 
-    document
-      .querySelectorAll("[data-temp] b")
-      .forEach((check) => check.classList.add("hidden"));
+    document.querySelectorAll("[data-temp] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
 
     button.querySelector("b").classList.remove("hidden");
 
-    renderWeather();
+    if (weatherData) {
+      renderWeather();
+    }
   };
 });
 
@@ -350,13 +493,15 @@ document.querySelectorAll("[data-wind]").forEach((button) => {
   button.onclick = () => {
     units.dataset.wind = button.dataset.wind;
 
-    document
-      .querySelectorAll("[data-wind] b")
-      .forEach((check) => check.classList.add("hidden"));
+    document.querySelectorAll("[data-wind] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
 
     button.querySelector("b").classList.remove("hidden");
 
-    renderWeather();
+    if (weatherData) {
+      renderWeather();
+    }
   };
 });
 
@@ -364,18 +509,22 @@ document.querySelectorAll("[data-precip]").forEach((button) => {
   button.onclick = () => {
     units.dataset.precip = button.dataset.precip;
 
-    document
-      .querySelectorAll("[data-precip] b")
-      .forEach((check) => check.classList.add("hidden"));
+    document.querySelectorAll("[data-precip] b").forEach((check) => {
+      check.classList.add("hidden");
+    });
 
     button.querySelector("b").classList.remove("hidden");
 
-    renderWeather();
+    if (weatherData) {
+      renderWeather();
+    }
   };
 });
 
 retry.addEventListener("click", () => {
-  searchWeather(lastSearch);
+  if (lastSearch) {
+    searchWeather(lastSearch);
+  }
 });
 
 document.addEventListener("click", (event) => {
@@ -386,12 +535,15 @@ document.addEventListener("click", (event) => {
   if (!dayBtn.contains(event.target) && !days.contains(event.target)) {
     days.classList.add("hidden");
   }
+
+  if (!searchInput.contains(event.target) && !results.contains(event.target)) {
+    results.classList.add("hidden");
+  }
 });
 
 const savedLocation = localStorage.getItem("lastLocation");
 
 if (savedLocation) {
-  searchInput.value = savedLocation;
   searchWeather(savedLocation);
 } else {
   searchWeather("Berlin");

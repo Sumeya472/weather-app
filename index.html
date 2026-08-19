@@ -41,16 +41,16 @@
 
     <style>
       .weather {
-        background: linear-gradient(
-          135deg,
-          hsl(233, 67%, 56%),
-          hsl(248, 70%, 36%)
-        );
+        background-image: url("./assets/images/bg-today-large.svg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
       }
 
       .scroll::-webkit-scrollbar {
         width: 5px;
       }
+
       .scroll::-webkit-scrollbar-thumb {
         background: hsl(243, 23%, 30%);
         border-radius: 10px;
@@ -62,24 +62,33 @@
     <main class="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
       <header class="flex items-center justify-between">
         <a class="flex items-center gap-2 font-bold">
-          <span class="text-2xl text-o-500">☀</span>
-          Weather Now
+          <img
+            src="./assets/images/logo.svg"
+            alt="Weather Now"
+            class="h-8 w-auto"
+          />
         </a>
 
         <div class="relative">
           <button
             id="unitsBtn"
-            class="rounded-lg bg-n-800 px-3 py-2 text-sm hover:bg-n-700"
+            class="flex items-center gap-2 rounded-lg bg-n-800 px-3 py-2 text-sm hover:bg-n-700"
           >
-            ⚙ Units⌄
+            <img src="./assets/images/icon-units.svg" alt="" class="h-4 w-4" />
+            <span>Units</span>
+            <span><img src="./assets/images/icon-dropdown.svg" alt="" /></span>
           </button>
 
           <div
             id="units"
             class="absolute right-0 top-12 z-50 hidden w-64 rounded-xl bg-n-800 p-3 shadow-2xl"
           >
-            <p class="mb-2 text-xs text-n-300">Switch to Imperial</p>
-
+            <button
+              id="imperialBtn"
+              class="mb-2 w-full rounded px-3 py-2 text-left text-xs text-n-300 hover:bg-n-700"
+            >
+              Switch to Imperial
+            </button>
             <div class="border-b border-n-700 pb-2">
               <p class="text-xs text-n-300">Temperature</p>
 
@@ -87,14 +96,18 @@
                 data-temp="celsius"
                 class="u flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                Celsius (°C)<b>✓</b>
+                Celsius (°C)<b
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
 
               <button
                 data-temp="fahrenheit"
                 class="u flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                Fahrenheit (°F)<b class="hidden">✓</b>
+                Fahrenheit (°F)<b class="hidden"
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
             </div>
 
@@ -105,14 +118,18 @@
                 data-wind="kmh"
                 class="w flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                km/h<b>✓</b>
+                km/h<b
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
 
               <button
                 data-wind="mph"
                 class="w flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                mph<b class="hidden">✓</b>
+                mph<b class="hidden"
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
             </div>
 
@@ -123,14 +140,18 @@
                 data-precip="mm"
                 class="p flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                Millimeters (mm)<b>✓</b>
+                Millimeters (mm)<b
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
 
               <button
                 data-precip="inch"
                 class="p flex w-full justify-between rounded px-3 py-2 text-sm hover:bg-n-700"
               >
-                Inches (in)<b class="hidden">✓</b>
+                Inches (in)<b class="hidden"
+                  ><img src="./assets/images/icon-checkmark.svg" alt=""
+                /></b>
               </button>
             </div>
           </div>
@@ -147,13 +168,17 @@
           class="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
         >
           <div class="relative flex-1">
+            <img
+              src="./assets/images/icon-search.svg"
+              alt=""
+              class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
+            />
             <input
               id="search"
               autocomplete="off"
-              placeholder="🔍  Search for a place..."
-              class="h-14 w-full rounded-xl bg-n-800 px-4 outline-none focus:ring-2 focus:ring-b-500"
+              placeholder=" Search for a place..."
+              class="h-14 w-full rounded-xl bg-n-800 pl-14 pr-4 outline-none focus:ring-2 focus:ring-b-500"
             />
-
             <div
               id="results"
               class="absolute top-16 z-40 hidden w-full overflow-hidden rounded-xl bg-n-800 text-left shadow-xl"
@@ -186,7 +211,7 @@
           id="retry"
           class="mt-5 rounded-lg bg-b-500 px-6 py-3 font-semibold"
         >
-          Try again
+          Retry
         </button>
       </div>
 
